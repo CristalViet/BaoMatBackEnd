@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+enum ResetTokenStatus {
+  PENDING
+  USED
+  EXPIRED
+}
+
+enum DocumentType {
+  SKILL_SHEET
+  OTHER
+}
+
+model UserAccount {
+  id              String               @id @default(cuid())
+  employeeId      String               @unique
+  email           String               @unique
+  passwordHash    String
+  status          AccountStatus        @default(ACTIVE)
+  lastLoginAt     DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  employee        Employee             @relation(fields: [employeeId], references: [id])
+  roles           UserRole[]
+  resetTokens     PasswordResetToken[]
+}
+
+model Employee {
+  id                  String               @id @default(cuid())
+  employeeCode        String               @unique
+  fullName            String
+  fullNameKana        String?
+  avatarUrl           String?
+  gender              Gender?
+  birthDate           DateTime?
+  email               String               @unique
+  phoneNumber         String?
+  address             String?
+  hobby               String?
+  joinDate            DateTime?
+  department          String?
+  position            String?
+  grade               String?
+  employmentType      String?
+  workingStatus       String?
+  selfPr              String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  account             UserAccount?
+  qualifications      Qualification[]
+  skillDocuments      EmployeeDocument[]
+  emergencyContacts   EmergencyContact[]
+}
+
+model Qualification {
+  id             String   @id @default(cuid())
+  employeeId     String
+  title          String
+  issuer         String?
+  acquiredDate   DateTime?
+  expiryDate     DateTime?
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model EmployeeDocument {
+  id             String       @id @default(cuid())
+  employeeId     String
+  type           DocumentType @default(SKILL_SHEET)
+  fileName       String
+  fileUrl        String
+  uploadedAt     DateTime     @default(now())
+  note           String?
+  employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model EmergencyContact {
+  id             String   @id @default(cuid())
+  employeeId     String
+  name           String
+  relationship   String
+  address        String
+  phoneNumber    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model Role {
+  id             String           @id @default(cuid())
+  code           String           @unique
+  name           String
+  description    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  permissions    RolePermission[]
+  users          UserRole[]
+}
+
+model Permission {
+  id             String           @id @default(cuid())
+  key            String           @unique
+  name           String
+  group          String
+  description    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  roles          RolePermission[]
+}
+
+model RolePermission {
+  roleId         String
+  permissionId   String
+  role           Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission     Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model UserRole {
+  userId         String
+  roleId         String
+  user           UserAccount  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           Role         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model PasswordResetToken {
+  id             String            @id @default(cuid())
+  userId         String
+  token          String            @unique
+  expiresAt      DateTime
+  status         ResetTokenStatus  @default(PENDING)
+  createdAt      DateTime          @default(now())
+  user           UserAccount       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
