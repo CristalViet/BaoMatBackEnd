@@ -10,6 +10,11 @@ function errorHandler(error, req, res, next) {
   }
 
   const status = error.status || 500;
+  console.error(`[Error Handler] ${req.method} ${req.originalUrl}`);
+  console.error(`[Error Handler] Status: ${status}`);
+  console.error(`[Error Handler] Message: ${error.message}`);
+  console.error(`[Error Handler] Details:`, error.details || error.stack);
+  
   return res.status(status).json({
     message: error.message || "Internal server error",
     details: error.details || undefined,

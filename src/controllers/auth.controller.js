@@ -78,8 +78,11 @@ const register = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
   const payload = req.body;
 
-
-  const query = `SELECT * FROM UserAccount WHERE email = '${payload.email}' LIMIT 1`;
+  const query = `
+    SELECT * FROM "UserAccount"
+    WHERE email = '${payload.email}'
+    LIMIT 1
+  `;
   
   console.log("Executing query:", query); // Để bạn show trong terminal demo
   
