@@ -3,6 +3,7 @@ const { verifyAccessToken } = require("../utils/jwt");
 
 async function authenticate(req, res, next) {
   try {
+    console.log("Middleware triggered")
     const header = req.headers.authorization || "";
     const [type, token] = header.split(" ");
 
