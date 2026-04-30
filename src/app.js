@@ -20,7 +20,7 @@ app.use(express.json());
 
 app.use("/api", routes);
 
-router.get("/health", (req, res) => {
+app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "hr-management-backend",
