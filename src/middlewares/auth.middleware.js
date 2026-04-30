@@ -3,11 +3,12 @@ const { verifyAccessToken } = require("../utils/jwt");
 
 async function authenticate(req, res, next) {
   try {
-    console.log("Middleware triggered")
+    console.log(`[Auth Middleware] Triggered for ${req.method} ${req.originalUrl}`);
     const header = req.headers.authorization || "";
     const [type, token] = header.split(" ");
 
     if (type !== "Bearer" || !token) {
+      console.log(`[Auth Middleware] Missing Bearer token for ${req.method} ${req.originalUrl}`);
       return res.status(401).json({ message: "Unauthorized" });
     }
 
@@ -33,8 +34,11 @@ async function authenticate(req, res, next) {
     });
 
     if (!user || user.status !== "ACTIVE") {
+      console.log(`[Auth Middleware] User validation failed (exists: ${!!user}, status: ${user?.status})`);
       return res.status(401).json({ message: "Account is not active" });
     }
+
+    console.log(`[Auth Middleware] Success for user ${user.email}`);
 
     const roleCodes = user.roles.map((item) => item.role.code);
     const permissions = [
