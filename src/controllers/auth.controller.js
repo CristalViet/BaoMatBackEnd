@@ -76,11 +76,9 @@ const register = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
-  const payload = loginSchema.parse(req.body);
+  const payload = req.body;
 
-  // --- PHẦN THAY ĐỔI ĐỂ DEMO SQL INJECTION ---
-  // Thay vì dùng prisma.userAccount.findUnique (an toàn)
-  // Ta dùng $queryRawUnsafe để tạo lỗ hổng bằng cách cộng chuỗi trực tiếp
+
   const query = `SELECT * FROM UserAccount WHERE email = '${payload.email}' LIMIT 1`;
   
   console.log("Executing query:", query); // Để bạn show trong terminal demo
