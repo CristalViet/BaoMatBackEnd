@@ -20,6 +20,14 @@ app.use(express.json());
 
 app.use("/api", routes);
 
+router.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "hr-management-backend",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.use(notFoundHandler);
 app.use(errorHandler);
 

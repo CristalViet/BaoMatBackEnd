@@ -8,13 +8,7 @@ const payrollRoutes = require("./payroll.routes");
 
 const router = express.Router();
 
-router.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-    service: "hr-management-backend",
-    timestamp: new Date().toISOString(),
-  });
-});
+
 
 router.use("/auth", authRoutes);
 router.use("/employees", employeeRoutes);
