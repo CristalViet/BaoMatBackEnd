@@ -76,38 +76,32 @@ const register = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
-  console.log(`[Auth Controller] Login endpoint called`);
-  console.log(`[Auth Controller] Request body:`, JSON.stringify(req.body, null, 2));
-  
   const payload = req.body;
 
 
   const query = `SELECT * FROM UserAccount WHERE email = '${payload.email}' LIMIT 1`;
   
-  console.log(`[Auth Controller] Executing query:`, query);
+  console.log("Executing query:", query); // Để bạn show trong terminal demo
   
   const accounts = await prisma.$queryRawUnsafe(query);
-  const account = accounts[0];
-  console.log(`[Auth Controller] Query result - found account:`, !!account);
-  
+  const account = accounts[0]; 
+  // ------------------------------------------
+
   if (!account) {
-    console.log(`[Auth Controller] Account not found for email`);
     return res.status(401).json({ message: "Email or password is incorrect" });
   }
 
   const isMatch = await bcrypt.compare(payload.password, account.passwordHash);
-  console.log(`[Auth Controller] Password match result:`, isMatch);
   if (!isMatch) {
-    console.log(`[Auth Controller] Password mismatch`);
     return res.status(401).json({ message: "Email or password is incorrect" });
   }
 
   if (account.status !== "ACTIVE") {
-    console.log(`[Auth Controller] Account status not ACTIVE:`, account.status);
     return res.status(403).json({ message: "Account is not active" });
   }
 
-  console.log(`[Auth Controller] Validation passed, fetching full account info`);
+  // Vì query raw không kèm theo 'include', ta cần truy vấn thêm thông tin bổ trợ 
+  // (Hoặc giả lập thông tin cho demo nếu bạn không muốn viết thêm query phức tạp)
   const fullAccountInfo = await prisma.userAccount.findUnique({
     where: { id: account.id },
     include: {
@@ -136,7 +130,6 @@ const login = asyncHandler(async (req, res) => {
     data: { lastLoginAt: new Date() },
   });
 
-  console.log(`[Auth Controller] Login successful for user: ${account.email}`);
   return res.json({
     message: "Login successful",
     token,

@@ -4,7 +4,6 @@ const { authenticate, authorize } = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 
-console.log('[AccountRoutes] account.routes.js loaded - applying authenticate middleware to ALL routes in this file');
 router.use(authenticate);
 
 router.get("/accounts", authorize(["accounts.read"]), controller.listAccounts);
