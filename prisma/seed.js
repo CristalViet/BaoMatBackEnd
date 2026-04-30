@@ -46,15 +46,33 @@ async function main() {
     },
   });
 
-  await prisma.rolePermission.deleteMany({
-    where: { roleId: { in: [adminRole.id, hrRole.id] } },
+  const employeeRole = await prisma.role.upsert({
+    where: { code: "EMPLOYEE" },
+    update: {
+      name: "Employee",
+      description: "Basic access for employees",
+    },
+    create: {
+      code: "EMPLOYEE",
+      name: "Employee",
+      description: "Basic access for employees",
+    },
   });
 
+  await prisma.rolePermission.deleteMany({
+    where: { roleId: { in: [adminRole.id, hrRole.id, employeeRole.id] } },
+  });
+
+  const employeePermissions = permissionRecords.filter(p => ["dashboard.read", "employees.read"].includes(p.key)).map(p => ({ roleId: employeeRole.id, permissionId: p.id }));
+
   await prisma.rolePermission.createMany({
-    data: permissionIds.flatMap((permissionId) => [
-      { roleId: adminRole.id, permissionId },
-      { roleId: hrRole.id, permissionId },
-    ]),
+    data: [
+      ...permissionIds.flatMap((permissionId) => [
+        { roleId: adminRole.id, permissionId },
+        { roleId: hrRole.id, permissionId },
+      ]),
+      ...employeePermissions
+    ],
     skipDuplicates: true,
   });
 

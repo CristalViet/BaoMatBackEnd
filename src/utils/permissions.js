@@ -11,6 +11,8 @@ const APP_PERMISSIONS = [
   { key: "accounts.manage", name: "Manage accounts", group: "accounts" },
   { key: "roles.read", name: "View roles", group: "roles" },
   { key: "roles.manage", name: "Manage roles", group: "roles" },
+  { key: "employees.contracts.manage", name: "Manage contracts", group: "employees" },
+  { key: "employees.payrolls.manage", name: "Manage payrolls", group: "employees" },
 ];
 
 module.exports = { APP_PERMISSIONS };

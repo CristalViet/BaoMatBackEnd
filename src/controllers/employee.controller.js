@@ -87,6 +87,8 @@ const getEmployeeById = asyncHandler(async (req, res) => {
       qualifications: true,
       skillDocuments: true,
       emergencyContacts: true,
+      contracts: true,
+      payrolls: true,
     },
   });
 

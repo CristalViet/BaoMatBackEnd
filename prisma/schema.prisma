@@ -33,6 +33,9 @@ enum ResetTokenStatus {
 
 enum DocumentType {
   SKILL_SHEET
+  CV
+  CONTRACT
+  DECISION
   OTHER
 }
 
@@ -75,6 +78,8 @@ model Employee {
   qualifications      Qualification[]
   skillDocuments      EmployeeDocument[]
   emergencyContacts   EmergencyContact[]
+  contracts           Contract[]
+  payrolls            Payroll[]
 }
 
 model Qualification {
@@ -161,4 +166,34 @@ model PasswordResetToken {
   status         ResetTokenStatus  @default(PENDING)
   createdAt      DateTime          @default(now())
   user           UserAccount       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Contract {
+  id             String       @id @default(cuid())
+  employeeId     String
+  contractNumber String       @unique
+  type           String
+  startDate      DateTime
+  endDate        DateTime?
+  baseSalary     Float?
+  status         String       @default("ACTIVE")
+  fileUrl        String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model Payroll {
+  id             String       @id @default(cuid())
+  employeeId     String
+  period         String
+  basicSalary    Float
+  allowances     Float        @default(0)
+  deductions     Float        @default(0)
+  netSalary      Float
+  status         String       @default("DRAFT")
+  paymentDate    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }

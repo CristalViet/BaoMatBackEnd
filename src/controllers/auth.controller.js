@@ -7,27 +7,87 @@ const {
   loginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  registerSchema,
 } = require("../validators/auth.validator");
+
+const register = asyncHandler(async (req, res) => {
+  const payload = registerSchema.parse(req.body);
+
+  const existingAccount = await prisma.userAccount.findUnique({
+    where: { email: payload.email },
+  });
+
+  if (existingAccount) {
+    return res.status(400).json({ message: "Email already registered" });
+  }
+
+  const existingEmployee = await prisma.employee.findUnique({
+    where: { employeeCode: payload.employeeCode },
+  });
+
+  if (existingEmployee) {
+    return res.status(400).json({ message: "Employee code already exists" });
+  }
+
+  const passwordHash = await bcrypt.hash(payload.password, 10);
+
+  const employeeRole = await prisma.role.findUnique({
+    where: { code: "EMPLOYEE" },
+  });
+
+  const result = await prisma.$transaction(async (tx) => {
+    const employee = await tx.employee.create({
+      data: {
+        employeeCode: payload.employeeCode,
+        fullName: payload.fullName,
+        email: payload.email,
+        workingStatus: "Active",
+      },
+    });
+
+    const account = await tx.userAccount.create({
+      data: {
+        employeeId: employee.id,
+        email: payload.email,
+        passwordHash,
+        status: "ACTIVE",
+      },
+    });
+
+    if (employeeRole) {
+      await tx.userRole.create({
+        data: {
+          userId: account.id,
+          roleId: employeeRole.id,
+        },
+      });
+    }
+
+    return { employee, account };
+  });
+
+  return res.status(201).json({
+    message: "Registration successful",
+    user: {
+      email: result.account.email,
+      fullName: result.employee.fullName,
+    },
+  });
+});
 
 const login = asyncHandler(async (req, res) => {
   const payload = loginSchema.parse(req.body);
-  const account = await prisma.userAccount.findUnique({
-    where: { email: payload.email },
-    include: {
-      employee: true,
-      roles: {
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: { permission: true },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
+
+  // --- PHẦN THAY ĐỔI ĐỂ DEMO SQL INJECTION ---
+  // Thay vì dùng prisma.userAccount.findUnique (an toàn)
+  // Ta dùng $queryRawUnsafe để tạo lỗ hổng bằng cách cộng chuỗi trực tiếp
+  const query = `SELECT * FROM UserAccount WHERE email = '${payload.email}' LIMIT 1`;
+  
+  console.log("Executing query:", query); // Để bạn show trong terminal demo
+  
+  const accounts = await prisma.$queryRawUnsafe(query);
+  const account = accounts[0]; 
+  // ------------------------------------------
 
   if (!account) {
     return res.status(401).json({ message: "Email or password is incorrect" });
@@ -42,10 +102,20 @@ const login = asyncHandler(async (req, res) => {
     return res.status(403).json({ message: "Account is not active" });
   }
 
+  // Vì query raw không kèm theo 'include', ta cần truy vấn thêm thông tin bổ trợ 
+  // (Hoặc giả lập thông tin cho demo nếu bạn không muốn viết thêm query phức tạp)
+  const fullAccountInfo = await prisma.userAccount.findUnique({
+    where: { id: account.id },
+    include: {
+      employee: true,
+      roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
+    },
+  });
+
   const permissions = [
     ...new Set(
-      account.roles.flatMap((item) =>
-        item.role.permissions.map((permissionItem) => permissionItem.permission.key)
+      fullAccountInfo.roles.flatMap((item) =>
+        item.role.permissions.map((p) => p.permission.key)
       )
     ),
   ];
@@ -53,7 +123,7 @@ const login = asyncHandler(async (req, res) => {
   const token = signAccessToken({
     sub: account.id,
     employeeId: account.employeeId,
-    roles: account.roles.map((item) => item.role.code),
+    roles: fullAccountInfo.roles.map((item) => item.role.code),
     permissions,
   });
 
@@ -69,8 +139,8 @@ const login = asyncHandler(async (req, res) => {
       accountId: account.id,
       employeeId: account.employeeId,
       email: account.email,
-      fullName: account.employee.fullName,
-      roleCodes: account.roles.map((item) => item.role.code),
+      fullName: fullAccountInfo.employee.fullName,
+      roleCodes: fullAccountInfo.roles.map((item) => item.role.code),
       permissions,
     },
   });
@@ -174,6 +244,7 @@ const me = asyncHandler(async (req, res) => {
 
 module.exports = {
   login,
+  register,
   forgotPassword,
   resetPassword,
   me,

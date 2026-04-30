@@ -29,7 +29,7 @@ const qualificationSchema = z.object({
 });
 
 const employeeDocumentSchema = z.object({
-  type: z.enum(["SKILL_SHEET", "OTHER"]).default("SKILL_SHEET"),
+  type: z.enum(["SKILL_SHEET", "CV", "CONTRACT", "DECISION", "OTHER"]).default("SKILL_SHEET"),
   fileName: z.string().min(1),
   fileUrl: z.string().min(1),
   note: z.string().optional().nullable(),
