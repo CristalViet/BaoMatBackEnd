@@ -15,11 +15,6 @@ router.post(
   authorize(["employees.qualifications.manage"]),
   controller.addQualification
 );
-router.post(
-  "/:id/documents",
-  authorize(["employees.documents.manage"]),
-  controller.addSkillDocument
-);
 router.put(
   "/:id/emergency-contact",
   authorize(["employees.emergency.manage"]),
